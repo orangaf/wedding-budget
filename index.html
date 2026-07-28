@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מאזן החתונה שלנו 💍</title>
+  <meta name="description" content="כלי לניהול תקציב החתונה - מעקב הוצאות ומעטפות אורחים" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    @media print {
+      body { background: #fff !important; color: #222 !important; }
+      .nav-tabs, .section-card:not(.print-section), #conn-badge,
+      .btn, .actions, .tg-card, .modal-overlay { display: none !important; }
+      .stats-grid { display: grid !important; grid-template-columns: repeat(4,1fr); }
+      .stat-card { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
+      .stat-card .amount { -webkit-text-fill-color: #222 !important; }
+      table { font-size: 11pt; }
+      thead th { color: #444 !important; }
+      .badge { border: 1px solid #aaa !important; color: #222 !important; background: #eee !important; }
+      .panel { display: block !important; }
+    }
+    :root {
+      --rose:       #c8587a;
+      --rose-light: #e8a0b4;
+      --rose-dark:  #9b3458;
+      --gold:       #d4a843;
+      --gold-light: #f0cc78;
+      --cream:      #fdf6ee;
+      --dark:       #1a0e14;
+      --card-bg:    rgba(255,255,255,0.07);
+      --card-border:rgba(212,168,67,0.25);
+      --text-main:  #f5e8d0;
+      --text-muted: #c4a88a;
+      --success:    #4caf88;
+      --danger:     #e05c6a;
+      --radius:     18px;
+      --shadow:     0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: linear-gradient(135deg, #1a0e14 0%, #2d1825 40%, #1e1530 100%);
+      min-height: 100vh;
+      color: var(--text-main);
+      direction: rtl;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(200,88,122,0.12) 0%, transparent 55%),
+                  radial-gradient(ellipse at 80% 80%, rgba(212,168,67,0.10) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    /* -------- connection badge -------- */
+    #conn-badge {
+      position: fixed; top: 14px; left: 14px; z-index: 1000;
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 14px; border-radius: 50px;
+      font-size: 0.8rem; font-weight: 600;
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.35);
+      transition: all 0.4s;
+    }
+    #conn-dot { width: 9px; height: 9px; border-radius: 50%; transition: background 0.4s; }
+    #conn-badge.connected #conn-dot { background: #4caf88; box-shadow: 0 0 8px #4caf88; }
+    #conn-badge.disconnected #conn-dot { background: #e05c6a; box-shadow: 0 0 8px #e05c6a; }
+    #conn-badge.connecting #conn-dot {
+      background: var(--gold);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* -------- live indicator -------- */
+    .live-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; color: var(--success);
+      padding: 2px 8px; border-radius: 20px;
+      background: rgba(76,175,136,0.12);
+      border: 1px solid rgba(76,175,136,0.3);
+      margin-right: 8px;
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* -------- header -------- */
+    .site-header { text-align: center; padding: 48px 20px 36px; }
+    .site-header .rings { font-size: 2.8rem; margin-bottom: 10px; animation: float 4s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .site-header h1 {
+      font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 800;
+      background: linear-gradient(135deg, var(--gold-light), var(--rose-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .site-header p { color: var(--text-muted); font-size: 1rem; }
+
+    /* -------- nav tabs -------- */
+    .nav-tabs { display: flex; gap: 8px; justify-content: center; margin: 28px 0 32px; flex-wrap: wrap; }
+    .nav-tab {
+      padding: 10px 22px; border-radius: 50px;
+      border: 1.5px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.25s;
+      backdrop-filter: blur(8px);
+    }
+    .nav-tab:hover { border-color: var(--rose-light); color: var(--text-main); }
+    .nav-tab.active {
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      border-color: transparent; color: #fff;
+      box-shadow: 0 4px 18px rgba(200,88,122,0.45);
+    }
+
+    /* -------- panels -------- */
+    .panel { display: none; animation: fadeIn 0.35s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    /* -------- stat cards -------- */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--card-bg); border: 1.5px solid var(--card-border);
+      border-radius: var(--radius); padding: 24px 20px;
+      text-align: center; backdrop-filter: blur(12px);
+      box-shadow: var(--shadow); transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-card .label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-card .amount {
+      font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800;
+      background: linear-gradient(135deg, var(--gold-light), var(--rose-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-card.positive .amount { background: linear-gradient(135deg,#7de8b0,#4caf88); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .stat-card.negative .amount { background: linear-gradient(135deg,#f78b8b,#e05c6a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+    /* -------- balance bar -------- */
+    .balance-bar-wrap { margin-bottom: 32px; }
+    .balance-bar-wrap .bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; }
+    .bar-track { height: 12px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--rose), var(--gold)); transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+
+    /* -------- section card -------- */
+    .section-card {
+      background: var(--card-bg); border: 1.5px solid var(--card-border);
+      border-radius: var(--radius); padding: 28px 24px;
+      backdrop-filter: blur(12px); box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .section-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--gold-light); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+    /* -------- form -------- */
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+    .form-group label { font-size: 0.82rem; color: var(--text-muted); }
+    .form-group input, .form-group select, .form-group textarea {
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(212,168,67,0.2);
+      border-radius: 10px; color: var(--text-main);
+      font-family: 'Heebo', sans-serif; font-size: 0.95rem;
+      padding: 10px 12px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s; direction: rtl;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--rose-light); box-shadow: 0 0 0 3px rgba(200,88,122,0.15); }
+    .form-group select option { background: #2d1825; }
+
+    .btn {
+      padding: 11px 24px; border-radius: 10px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: #fff; box-shadow: 0 4px 14px rgba(200,88,122,0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,88,122,0.55); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), #b8882a); color: #1a0e14; box-shadow: 0 4px 14px rgba(212,168,67,0.35); }
+    .btn-gold:hover { transform: translateY(-2px); }
+    .btn-sm { padding: 6px 14px; font-size: 0.82rem; border-radius: 7px; }
+    .btn-danger { background: rgba(224,92,106,0.2); color: #f78b8b; border: 1px solid rgba(224,92,106,0.35); }
+    .btn-danger:hover { background: rgba(224,92,106,0.35); }
+    .btn-edit { background: rgba(212,168,67,0.15); color: var(--gold-light); border: 1px solid rgba(212,168,67,0.3); }
+    .btn-edit:hover { background: rgba(212,168,67,0.3); }
+    .add-row { display: flex; align-items: flex-end; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+    /* -------- table -------- */
+    .table-wrap { overflow-x: auto; margin-top: 20px; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    thead tr { border-bottom: 1.5px solid var(--card-border); }
+    thead th { padding: 10px 14px; color: var(--gold-light); font-weight: 600; text-align: right; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid rgba(212,168,67,0.08); transition: background 0.15s; }
+    tbody tr:hover { background: rgba(255,255,255,0.04); }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .badge-rose   { background: rgba(200,88,122,0.2);  color: var(--rose-light); border: 1px solid rgba(200,88,122,0.35); }
+    .badge-gold   { background: rgba(212,168,67,0.15); color: var(--gold-light); border: 1px solid rgba(212,168,67,0.3); }
+    .badge-blue   { background: rgba(100,150,220,0.15);color: #99c4f0; border: 1px solid rgba(100,150,220,0.3); }
+    .badge-green  { background: rgba(76,175,136,0.15); color: #7de8b0; border: 1px solid rgba(76,175,136,0.3); }
+    .badge-purple { background: rgba(160,100,200,0.15);color: #d0a0f8; border: 1px solid rgba(160,100,200,0.3); }
+    .badge-orange { background: rgba(220,150,60,0.15); color: #f8c070; border: 1px solid rgba(220,150,60,0.3); }
+    .actions { display: flex; gap: 6px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.92rem; }
+
+    /* -------- toast -------- */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: linear-gradient(135deg, var(--rose-dark), #6b1f38);
+      color: #fff; padding: 12px 26px; border-radius: 50px;
+      font-weight: 600; font-size: 0.9rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      z-index: 9999;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* -------- modal -------- */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65); z-index: 500;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #2a1520; border: 1.5px solid var(--card-border);
+      border-radius: var(--radius); padding: 32px 28px;
+      width: 90%; max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      animation: fadeIn 0.25s ease;
+    }
+    .modal-box h3 { font-size: 1.15rem; color: var(--gold-light); margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+    /* -------- chart -------- */
+    .chart-wrap { margin-top: 24px; }
+    .chart-bar-group { margin-bottom: 14px; }
+    .chart-bar-label { display: flex; justify-content: space-between; font-size: 0.83rem; margin-bottom: 5px; color: var(--text-muted); }
+    .chart-bar-label span:last-child { color: var(--text-main); font-weight: 600; }
+    .chart-bar-track { height: 10px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+
+    /* -------- export bar -------- */
+    .export-bar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 24px; align-items: center;
+    }
+    .export-bar span { color: var(--text-muted); font-size: 0.88rem; margin-left: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 10px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .btn-export-green {
+      background: linear-gradient(135deg, #1e7e45, #145c2e);
+      color: #fff; box-shadow: 0 3px 12px rgba(30,126,69,0.4);
+    }
+    .btn-export-green:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(30,126,69,0.55); }
+    .btn-export-blue {
+      background: linear-gradient(135deg, #1a6aaa, #104070);
+      color: #fff; box-shadow: 0 3px 12px rgba(26,106,170,0.4);
+    }
+    .btn-export-blue:hover { transform: translateY(-2px); }
+    .btn-export-gray {
+      background: rgba(255,255,255,0.1); color: var(--text-muted);
+      border: 1.5px solid var(--card-border);
+    }
+    .btn-export-gray:hover { background: rgba(255,255,255,0.15); color: var(--text-main); }
+
+    /* -------- receipt styles -------- */
+    .receipt-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 8px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .receipt-btn-upload {
+      background: rgba(212,168,67,0.15); color: var(--gold-light);
+      border: 1.5px solid rgba(212,168,67,0.35);
+    }
+    .receipt-btn-upload:hover { background: rgba(212,168,67,0.28); }
+    .receipt-btn-view {
+      background: rgba(76,175,136,0.15); color: var(--success);
+      border: 1.5px solid rgba(76,175,136,0.35);
+    }
+    .receipt-btn-view:hover { background: rgba(76,175,136,0.28); }
+    .receipt-btn-del {
+      background: rgba(224,92,106,0.12); color: var(--danger);
+      border: 1.5px solid rgba(224,92,106,0.3); padding: 4px 7px;
+    }
+    .receipt-btn-del:hover { background: rgba(224,92,106,0.25); }
+    .receipt-cell { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+    /* receipt viewer modal */
+    #modal-receipt .modal-box { max-width: 700px; padding: 24px; }
+    #receipt-viewer { max-width:100%; max-height:70vh; border-radius:10px; display:block; margin:0 auto; }
+    #receipt-iframe { width:100%; height:70vh; border:none; border-radius:10px; }
+
+    /* -------- telegram card -------- */
+    .tg-card {
+      background: linear-gradient(135deg, rgba(0,136,204,0.12), rgba(0,136,204,0.06));
+      border: 1.5px solid rgba(0,136,204,0.3);
+      border-radius: var(--radius); padding: 20px 22px;
+      margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .tg-card .tg-icon { font-size: 2.2rem; flex-shrink: 0; }
+    .tg-card .tg-body { flex: 1; min-width: 200px; }
+    .tg-card h3 { font-size: 1rem; color: #60c8f8; margin-bottom: 4px; }
+    .tg-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+    .tg-card code {
+      background: rgba(0,136,204,0.15); border: 1px solid rgba(0,136,204,0.25);
+      border-radius: 6px; padding: 2px 7px;
+      font-family: monospace; font-size: 0.88rem; color: #90d8ff;
+    }
+    .cmd-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .cmd-pill {
+      padding: 4px 12px; border-radius: 20px;
+      background: rgba(0,136,204,0.15); border: 1px solid rgba(0,136,204,0.25);
+      font-size: 0.8rem; color: #90d8ff; font-family: monospace;
+    }
+
+    @media (max-width: 600px) {
+      .section-card { padding: 18px 14px; }
+      thead th, tbody td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Connection badge -->
+<div id="conn-badge" class="connecting">
+  <div id="conn-dot"></div>
+  <span id="conn-text">מתחבר...</span>
+</div>
+
+<div class="page-wrap">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="rings">💍</div>
+    <h1>מאזן החתונה שלנו</h1>
+    <p>ינואר 2027 · ניהול הוצאות, מעטפות ומאזן כולל</p>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="nav-tabs" role="tablist">
+    <button class="nav-tab active" id="tab-dashboard" onclick="switchTab('dashboard')" aria-selected="true">📊 לוח בקרה</button>
+    <button class="nav-tab" id="tab-expenses" onclick="switchTab('expenses')" aria-selected="false">💸 הוצאות</button>
+    <button class="nav-tab" id="tab-gifts" onclick="switchTab('gifts')" aria-selected="false">🎁 מעטפות אורחים</button>
+  </nav>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section class="panel active" id="panel-dashboard" role="tabpanel">
+
+    <!-- Export bar -->
+    <div class="export-bar">
+      <span>📤 ייצוא נתונים:</span>
+      <a class="btn-export btn-export-green" href="http://localhost:3001/api/export/expenses.csv" download>
+        📊 Excel הוצאות
+      </a>
+      <a class="btn-export btn-export-blue" href="http://localhost:3001/api/export/guests.csv" download>
+        🎁 Excel אורחים
+      </a>
+      <button class="btn-export btn-export-gray" onclick="window.print()">
+        🖨️ הדפסת סיכום
+      </button>
+    </div>
+
+    <!-- Telegram info card -->
+    <div class="tg-card">
+      <div class="tg-icon">🤖</div>
+      <div class="tg-body">
+        <h3>בוט טלגרם מחובר <span class="live-tag"><span class="live-dot"></span>LIVE</span></h3>
+        <p>שלחו פקודות לבוט בטלגרם — הנתונים יופיעו כאן בזמן אמת!</p>
+        <div class="cmd-list">
+          <span class="cmd-pill">/הוצאה</span>
+          <span class="cmd-pill">/אורח</span>
+          <span class="cmd-pill">/סיכום</span>
+          <span class="cmd-pill">/רשימה</span>
+          <span class="cmd-pill">/ביטול</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">💸 סה"כ הוצאות</div>
+        <div class="amount" id="stat-expenses">₪0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">🎁 סה"כ מעטפות</div>
+        <div class="amount" id="stat-gifts">₪0</div>
+      </div>
+      <div class="stat-card" id="stat-balance-card">
+        <div class="label" id="stat-balance-label">⚖️ מאזן</div>
+        <div class="amount" id="stat-balance">₪0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">👥 מספר אורחים</div>
+        <div class="amount" id="stat-guests">0</div>
+      </div>
+    </div>
+
+    <div class="section-card balance-bar-wrap">
+      <h2>📈 כיסוי הוצאות על ידי מתנות</h2>
+      <div class="bar-label">
+        <span id="bar-label-gifts">מעטפות: ₪0</span>
+        <span id="bar-label-expenses">הוצאות: ₪0</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="coverage-bar" style="width:0%"></div></div>
+      <div style="text-align:center;margin-top:10px;font-size:0.85rem;color:var(--text-muted)">
+        <span id="coverage-pct">0%</span> מההוצאות מכוסות על ידי מעטפות
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2>📂 פירוט הוצאות לפי קטגוריה</h2>
+      <div class="chart-wrap" id="category-chart">
+        <div class="empty-state"><div class="icon">📋</div><p>הוסיפו הוצאות כדי לראות פירוט</p></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===== EXPENSES ===== -->
+  <section class="panel" id="panel-expenses" role="tabpanel">
+
+    <div class="section-card">
+      <h2>➕ הוספת הוצאה חדשה</h2>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label for="exp-name">שם ההוצאה</label>
+          <input type="text" id="exp-name" placeholder="לדוג׳: צלם, הופעה חיה..." />
+        </div>
+        <div class="form-group">
+          <label for="exp-cat">קטגוריה</label>
+          <select id="exp-cat">
+            <option value="אולם">🏛️ אולם</option>
+            <option value="קייטרינג">🍽️ קייטרינג</option>
+            <option value="צילום ווידאו">📸 צילום ווידאו</option>
+            <option value="מוזיקה">🎵 מוזיקה</option>
+            <option value="פרחים">🌸 פרחים</option>
+            <option value="שמלה וחליפה">👗 שמלה וחליפה</option>
+            <option value="הזמנות">💌 הזמנות</option>
+            <option value="הסעות">🚌 הסעות</option>
+            <option value="ירח דבש">✈️ ירח דבש</option>
+            <option value="אחר">📦 אחר</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="exp-amount">סכום (₪)</label>
+          <input type="number" id="exp-amount" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="exp-status">סטטוס</label>
+          <select id="exp-status">
+            <option value="מתוכנן">מתוכנן</option>
+            <option value="שולם מקדמה">שולם מקדמה</option>
+            <option value="שולם במלואו">שולם במלואו</option>
+          </select>
+        </div>
+      </div>
+      <div class="add-row">
+        <div class="form-group" style="flex:1">
+          <label for="exp-note">הערה (אופציונלי)</label>
+          <input type="text" id="exp-note" placeholder="הערות נוספות..." />
+        </div>
+        <button class="btn btn-primary" onclick="addExpense()">הוסף הוצאה</button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2>📋 רשימת הוצאות</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>שם</th><th>קטגוריה</th><th>סכום</th><th>סטטוס</th><th>הערה</th><th>🧾 קבלה</th><th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="expenses-table-body"></tbody>
+        </table>
+        <div id="expenses-empty" class="empty-state">
+          <div class="icon">💸</div>
+          <p>עדיין לא הוספתם הוצאות. התחילו על ידי הוספת ההוצאה הראשונה!</p>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <strong style="color:var(--gold-light);font-size:1.05rem">סה"כ: <span id="expenses-total">₪0</span></strong>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===== GIFTS ===== -->
+  <section class="panel" id="panel-gifts" role="tabpanel">
+
+    <div class="section-card">
+      <h2>➕ הוספת אורח / מעטפה</h2>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label for="gift-name">שם האורח</label>
+          <input type="text" id="gift-name" placeholder="לדוג׳: משפחת כהן..." />
+        </div>
+        <div class="form-group">
+          <label for="gift-guests">מספר אנשים</label>
+          <input type="number" id="gift-guests" placeholder="1" min="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label for="gift-amount">סכום מעטפה (₪)</label>
+          <input type="number" id="gift-amount" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="gift-side">צד</label>
+          <select id="gift-side">
+            <option value="חתן">👤 חתן</option>
+            <option value="כלה">👤 כלה</option>
+            <option value="משותף">👥 משותף</option>
+          </select>
+        </div>
+      </div>
+      <div class="add-row">
+        <div class="form-group" style="flex:1">
+          <label for="gift-note">הערה (אופציונלי)</label>
+          <input type="text" id="gift-note" placeholder="קרובי משפחה, חברים..." />
+        </div>
+        <button class="btn btn-gold" onclick="addGift()">הוסף אורח</button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2>🎁 רשימת אורחים ומעטפות</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>שם</th><th>צד</th><th>אנשים</th><th>מעטפה</th><th>ממוצע לאיש</th><th>הערה</th><th>פעולות</th></tr>
+          </thead>
+          <tbody id="gifts-table-body"></tbody>
+        </table>
+        <div id="gifts-empty" class="empty-state">
+          <div class="icon">🎁</div>
+          <p>עדיין לא הוספתם אורחים. לאחר החתונה, הזינו כאן את המעטפות!</p>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:24px;flex-wrap:wrap">
+        <strong style="color:var(--gold-light);font-size:1.05rem">סה"כ מעטפות: <span id="gifts-total">₪0</span></strong>
+        <span style="color:var(--text-muted)">👥 <span id="gifts-total-people">0</span> אורחים</span>
+      </div>
+    </div>
+
+  </section>
+
+</div><!-- /page-wrap -->
+
+<!-- Edit Expense Modal -->
+<div class="modal-overlay" id="modal-expense" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h3>✏️ עריכת הוצאה</h3>
+    <input type="hidden" id="edit-exp-id" />
+    <div class="form-group" style="margin-bottom:12px">
+      <label for="edit-exp-name">שם ההוצאה</label>
+      <input type="text" id="edit-exp-name" />
+    </div>
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group">
+        <label for="edit-exp-cat">קטגוריה</label>
+        <select id="edit-exp-cat">
+          <option value="אולם">🏛️ אולם</option>
+          <option value="קייטרינג">🍽️ קייטרינג</option>
+          <option value="צילום ווידאו">📸 צילום ווידאו</option>
+          <option value="מוזיקה">🎵 מוזיקה</option>
+          <option value="פרחים">🌸 פרחים</option>
+          <option value="שמלה וחליפה">👗 שמלה וחליפה</option>
+          <option value="הזמנות">💌 הזמנות</option>
+          <option value="הסעות">🚌 הסעות</option>
+          <option value="ירח דבש">✈️ ירח דבש</option>
+          <option value="אחר">📦 אחר</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="edit-exp-amount">סכום (₪)</label>
+        <input type="number" id="edit-exp-amount" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="edit-exp-status">סטטוס</label>
+        <select id="edit-exp-status">
+          <option value="מתוכנן">מתוכנן</option>
+          <option value="שולם מקדמה">שולם מקדמה</option>
+          <option value="שולם במלואו">שולם במלואו</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="edit-exp-note">הערה</label>
+      <input type="text" id="edit-exp-note" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeModal('modal-expense')">ביטול</button>
+      <button class="btn btn-primary" onclick="saveExpense()">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Gift Modal -->
+<div class="modal-overlay" id="modal-gift" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h3>✏️ עריכת אורח</h3>
+    <input type="hidden" id="edit-gift-id" />
+    <div class="form-group" style="margin-bottom:12px">
+      <label for="edit-gift-name">שם האורח</label>
+      <input type="text" id="edit-gift-name" />
+    </div>
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group">
+        <label for="edit-gift-guests">מספר אנשים</label>
+        <input type="number" id="edit-gift-guests" min="1" />
+      </div>
+      <div class="form-group">
+        <label for="edit-gift-amount">סכום (₪)</label>
+        <input type="number" id="edit-gift-amount" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="edit-gift-side">צד</label>
+        <select id="edit-gift-side">
+          <option value="חתן">👤 חתן</option>
+          <option value="כלה">👤 כלה</option>
+          <option value="משותף">👥 משותף</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="edit-gift-note">הערה</label>
+      <input type="text" id="edit-gift-note" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeModal('modal-gift')">ביטול</button>
+      <button class="btn btn-gold" onclick="saveGift()">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Viewer Modal -->
+<div class="modal-overlay" id="modal-receipt" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h3 id="receipt-title">🧾 קבלה</h3>
+    <img id="receipt-viewer" src="" alt="קבלה" style="display:none" />
+    <iframe id="receipt-iframe" src="" style="display:none"></iframe>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-danger" onclick="closeModal('modal-receipt')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  /* ─────────────────────────────────────────
+     CONFIG
+  ───────────────────────────────────────── */
+  const API = window.location.origin + '/api';
+
+  /* ─────────────────────────────────────────
+     STATE
+  ───────────────────────────────────────── */
+  let expenses = [];
+  let gifts    = [];
+  let isConnected = false;
+
+  /* ─────────────────────────────────────────
+     CONNECTION BADGE
+  ───────────────────────────────────────── */
+  function setConnected(ok) {
+    const badge = document.getElementById('conn-badge');
+    const text  = document.getElementById('conn-text');
+    badge.className = ok ? 'connected' : 'disconnected';
+    text.textContent = ok ? 'מחובר לשרת · Live' : 'לא מחובר לשרת';
+    isConnected = ok;
+  }
+
+  /* ─────────────────────────────────────────
+     API HELPERS
+  ───────────────────────────────────────── */
+  async function apiFetch(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    return res.json();
+  }
+
+  /* Load all data from server */
+  async function loadData() {
+    try {
+      const data = await apiFetch('GET', '/data');
+      expenses = data.expenses || [];
+      gifts    = data.gifts    || [];
+      setConnected(true);
+      renderAll();
+    } catch {
+      setConnected(false);
+    }
+  }
+
+  /* Poll every 3 seconds */
+  setInterval(loadData, 3000);
+
+  /* ─────────────────────────────────────────
+     TABS
+  ───────────────────────────────────────── */
+  function switchTab(tab) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab).setAttribute('aria-selected','true');
+    if (tab === 'dashboard') renderDashboard();
+  }
+
+  /* ─────────────────────────────────────────
+     TOAST
+  ───────────────────────────────────────── */
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  /* ─────────────────────────────────────────
+     FORMATTING
+  ───────────────────────────────────────── */
+  function fmt(n) { return '₪' + Number(n || 0).toLocaleString('he-IL'); }
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ─────────────────────────────────────────
+     COLOR MAPS
+  ───────────────────────────────────────── */
+  const CAT_COLORS = {
+    'אולם':        { cls: 'badge-rose',   bar: 'linear-gradient(90deg,#c8587a,#9b3458)' },
+    'קייטרינג':    { cls: 'badge-orange', bar: 'linear-gradient(90deg,#e8923a,#c06820)' },
+    'צילום ווידאו':{ cls: 'badge-blue',   bar: 'linear-gradient(90deg,#5a9fd4,#2a6fa8)' },
+    'מוזיקה':      { cls: 'badge-purple', bar: 'linear-gradient(90deg,#a060c8,#703898)' },
+    'פרחים':       { cls: 'badge-green',  bar: 'linear-gradient(90deg,#4caf88,#2a8f60)' },
+    'שמלה וחליפה': { cls: 'badge-gold',   bar: 'linear-gradient(90deg,#d4a843,#a87820)' },
+    'הזמנות':      { cls: 'badge-rose',   bar: 'linear-gradient(90deg,#e890a8,#c05878)' },
+    'הסעות':       { cls: 'badge-blue',   bar: 'linear-gradient(90deg,#60b0d8,#3888b0)' },
+    'ירח דבש':     { cls: 'badge-gold',   bar: 'linear-gradient(90deg,#f0cc78,#d4a843)' },
+    'אחר':         { cls: 'badge-purple', bar: 'linear-gradient(90deg,#b090d0,#8060a8)' },
+  };
+  const STATUS_CLS = { 'מתוכנן':'badge-blue', 'שולם מקדמה':'badge-orange', 'שולם במלואו':'badge-green' };
+  const SIDE_CLS   = { 'חתן':'badge-blue', 'כלה':'badge-rose', 'משותף':'badge-gold' };
+
+  /* ─────────────────────────────────────────
+     RENDER ALL
+  ───────────────────────────────────────── */
+  function renderAll() {
+    renderExpenses();
+    renderGifts();
+    renderDashboard();
+  }
+
+  /* ─────────────────────────────────────────
+     EXPENSES
+  ───────────────────────────────────────── */
+  async function addExpense() {
+    const name   = document.getElementById('exp-name').value.trim();
+    const cat    = document.getElementById('exp-cat').value;
+    const amount = parseFloat(document.getElementById('exp-amount').value);
+    const status = document.getElementById('exp-status').value;
+    const note   = document.getElementById('exp-note').value.trim();
+
+    if (!name)                       { toast('⚠️ אנא הזינו שם להוצאה'); return; }
+    if (isNaN(amount) || amount < 0) { toast('⚠️ אנא הזינו סכום תקין'); return; }
+    if (!isConnected)                { toast('⚠️ לא מחובר לשרת — הפעילו את server.js'); return; }
+
+    try {
+      await apiFetch('POST', '/expenses', { name, cat, amount, status, note });
+      await loadData();
+      document.getElementById('exp-name').value   = '';
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-note').value   = '';
+      toast('✅ ההוצאה נוספה בהצלחה!');
+    } catch { toast('❌ שגיאה בשמירה'); }
+  }
+
+  function renderExpenses() {
+    const tbody = document.getElementById('expenses-table-body');
+    const empty = document.getElementById('expenses-empty');
+    tbody.innerHTML = '';
+    empty.style.display = expenses.length === 0 ? 'block' : 'none';
+
+    let total = 0;
+    expenses.forEach(e => {
+      total += e.amount;
+      const cc = CAT_COLORS[e.cat] || CAT_COLORS['אחר'];
+      const sc = STATUS_CLS[e.status] || 'badge-blue';
+      // receipt cell
+      let receiptCell;
+      if (e.receipt) {
+        receiptCell = `<div class="receipt-cell">
+          <button class="receipt-btn receipt-btn-view" onclick="viewReceipt('${e.id}','${esc(e.receipt)}')">🧾 צפה</button>
+          <button class="receipt-btn receipt-btn-del" onclick="deleteReceipt('${e.id}')" title="מחק קבלה">✕</button>
+        </div>`;
+      } else {
+        receiptCell = `<div class="receipt-cell">
+          <label class="receipt-btn receipt-btn-upload" style="cursor:pointer">
+            📎 צרף
+            <input type="file" accept="image/*,.pdf" style="display:none" onchange="uploadReceipt('${e.id}',this)">
+          </label>
+        </div>`;
+      }
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${esc(e.name)}</strong><br><small style="color:var(--text-muted)">${e.date || ''}</small></td>
+        <td><span class="badge ${cc.cls}">${esc(e.cat)}</span></td>
+        <td style="font-weight:700;color:var(--gold-light)">${fmt(e.amount)}</td>
+        <td><span class="badge ${sc}">${esc(e.status)}</span></td>
+        <td style="color:var(--text-muted);font-size:0.85rem">${esc(e.note)}</td>
+        <td>${receiptCell}</td>
+        <td><div class="actions">
+          <button class="btn btn-sm btn-edit" onclick="openEditExpense('${e.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteExpense('${e.id}')">🗑️</button>
+        </div></td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('expenses-total').textContent = fmt(total);
+  }
+
+  async function deleteExpense(id) {
+    if (!confirm('למחוק הוצאה זו?')) return;
+    try { await apiFetch('DELETE', '/expenses/' + id); await loadData(); toast('🗑️ ההוצאה נמחקה'); }
+    catch { toast('❌ שגיאה במחיקה'); }
+  }
+
+  function openEditExpense(id) {
+    const e = expenses.find(x => x.id === id); if (!e) return;
+    document.getElementById('edit-exp-id').value     = id;
+    document.getElementById('edit-exp-name').value   = e.name;
+    document.getElementById('edit-exp-cat').value    = e.cat;
+    document.getElementById('edit-exp-amount').value = e.amount;
+    document.getElementById('edit-exp-status').value = e.status;
+    document.getElementById('edit-exp-note').value   = e.note;
+    document.getElementById('modal-expense').classList.add('open');
+  }
+
+  async function saveExpense() {
+    const id     = document.getElementById('edit-exp-id').value;
+    const name   = document.getElementById('edit-exp-name').value.trim();
+    const amount = parseFloat(document.getElementById('edit-exp-amount').value);
+    if (!name || isNaN(amount)) { toast('⚠️ אנא מלאו את כל השדות'); return; }
+    try {
+      await apiFetch('PUT', '/expenses/' + id, {
+        name, amount,
+        cat:    document.getElementById('edit-exp-cat').value,
+        status: document.getElementById('edit-exp-status').value,
+        note:   document.getElementById('edit-exp-note').value.trim(),
+      });
+      await loadData(); closeModal('modal-expense'); toast('✅ ההוצאה עודכנה!');
+    } catch { toast('❌ שגיאה בעדכון'); }
+  }
+
+  /* ─────────────────────────────────────────
+     GIFTS
+  ───────────────────────────────────────── */
+  async function addGift() {
+    const name   = document.getElementById('gift-name').value.trim();
+    const guests = parseInt(document.getElementById('gift-guests').value) || 1;
+    const amount = parseFloat(document.getElementById('gift-amount').value) || 0;
+    const side   = document.getElementById('gift-side').value;
+    const note   = document.getElementById('gift-note').value.trim();
+
+    if (!name)      { toast('⚠️ אנא הזינו שם אורח'); return; }
+    if (!isConnected){ toast('⚠️ לא מחובר לשרת — הפעילו את server.js'); return; }
+
+    try {
+      await apiFetch('POST', '/gifts', { name, guests, amount, side, note });
+      await loadData();
+      document.getElementById('gift-name').value   = '';
+      document.getElementById('gift-amount').value = '';
+      document.getElementById('gift-note').value   = '';
+      document.getElementById('gift-guests').value = '1';
+      toast('✅ האורח נוסף בהצלחה!');
+    } catch { toast('❌ שגיאה בשמירה'); }
+  }
+
+  function renderGifts() {
+    const tbody = document.getElementById('gifts-table-body');
+    const empty = document.getElementById('gifts-empty');
+    tbody.innerHTML = '';
+    empty.style.display = gifts.length === 0 ? 'block' : 'none';
+
+    let totalAmount = 0, totalPeople = 0;
+    gifts.forEach(g => {
+      totalAmount += g.amount;
+      totalPeople += g.guests;
+      const sc  = SIDE_CLS[g.side] || 'badge-gold';
+      const avg = g.guests > 0 ? (g.amount / g.guests).toFixed(0) : 0;
+      const tr  = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${esc(g.name)}</strong></td>
+        <td><span class="badge ${sc}">${esc(g.side)}</span></td>
+        <td style="text-align:center">${g.guests}</td>
+        <td style="font-weight:700;color:var(--gold-light)">${fmt(g.amount)}</td>
+        <td style="color:var(--text-muted)">${fmt(avg)}</td>
+        <td style="color:var(--text-muted);font-size:0.85rem">${esc(g.note)}</td>
+        <td><div class="actions">
+          <button class="btn btn-sm btn-edit" onclick="openEditGift('${g.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteGift('${g.id}')">🗑️</button>
+        </div></td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('gifts-total').textContent        = fmt(totalAmount);
+    document.getElementById('gifts-total-people').textContent = totalPeople;
+  }
+
+  async function deleteGift(id) {
+    if (!confirm('למחוק אורח זה?')) return;
+    try { await apiFetch('DELETE', '/gifts/' + id); await loadData(); toast('🗑️ האורח נמחק'); }
+    catch { toast('❌ שגיאה במחיקה'); }
+  }
+
+  function openEditGift(id) {
+    const g = gifts.find(x => x.id === id); if (!g) return;
+    document.getElementById('edit-gift-id').value     = id;
+    document.getElementById('edit-gift-name').value   = g.name;
+    document.getElementById('edit-gift-guests').value = g.guests;
+    document.getElementById('edit-gift-amount').value = g.amount;
+    document.getElementById('edit-gift-side').value   = g.side;
+    document.getElementById('edit-gift-note').value   = g.note;
+    document.getElementById('modal-gift').classList.add('open');
+  }
+
+  async function saveGift() {
+    const id     = document.getElementById('edit-gift-id').value;
+    const name   = document.getElementById('edit-gift-name').value.trim();
+    const guests = parseInt(document.getElementById('edit-gift-guests').value) || 1;
+    const amount = parseFloat(document.getElementById('edit-gift-amount').value) || 0;
+    if (!name) { toast('⚠️ אנא הזינו שם'); return; }
+    try {
+      await apiFetch('PUT', '/gifts/' + id, {
+        name, guests, amount,
+        side: document.getElementById('edit-gift-side').value,
+        note: document.getElementById('edit-gift-note').value.trim(),
+      });
+      await loadData(); closeModal('modal-gift'); toast('✅ האורח עודכן!');
+    } catch { toast('❌ שגיאה בעדכון'); }
+  }
+
+  /* ─────────────────────────────────────────
+     DASHBOARD
+  ───────────────────────────────────────── */
+  function renderDashboard() {
+    const totalExp  = expenses.reduce((s, e) => s + e.amount, 0);
+    const totalGift = gifts.reduce((s, g) => s + g.amount, 0);
+    const totalPpl  = gifts.reduce((s, g) => s + g.guests, 0);
+    const balance   = totalGift - totalExp;
+
+    document.getElementById('stat-expenses').textContent = fmt(totalExp);
+    document.getElementById('stat-gifts').textContent    = fmt(totalGift);
+    document.getElementById('stat-guests').textContent   = totalPpl;
+
+    const balEl   = document.getElementById('stat-balance');
+    const cardEl  = document.getElementById('stat-balance-card');
+    const labelEl = document.getElementById('stat-balance-label');
+    balEl.textContent = fmt(Math.abs(balance));
+    cardEl.classList.remove('positive', 'negative');
+    if (balance >= 0) { cardEl.classList.add('positive'); labelEl.textContent = '✅ רווח'; }
+    else              { cardEl.classList.add('negative'); labelEl.textContent = '⚠️ הפסד'; }
+
+    const pct = totalExp > 0 ? Math.min(100, (totalGift / totalExp) * 100) : 0;
+    document.getElementById('coverage-bar').style.width       = pct + '%';
+    document.getElementById('coverage-pct').textContent       = pct.toFixed(1) + '%';
+    document.getElementById('bar-label-gifts').textContent    = 'מעטפות: ' + fmt(totalGift);
+    document.getElementById('bar-label-expenses').textContent = 'הוצאות: '  + fmt(totalExp);
+
+    /* Category chart */
+    const catMap = {};
+    expenses.forEach(e => { catMap[e.cat] = (catMap[e.cat] || 0) + e.amount; });
+    const sorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+    const chart  = document.getElementById('category-chart');
+    if (sorted.length === 0) {
+      chart.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>הוסיפו הוצאות כדי לראות פירוט</p></div>';
+      return;
+    }
+    chart.innerHTML = sorted.map(([cat, amt]) => {
+      const p     = totalExp > 0 ? ((amt / totalExp) * 100).toFixed(1) : 0;
+      const color = (CAT_COLORS[cat] || CAT_COLORS['אחר']).bar;
+      return `<div class="chart-bar-group">
+        <div class="chart-bar-label"><span>${cat}</span><span>${fmt(amt)} (${p}%)</span></div>
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${p}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ─────────────────────────────────────────
+     RECEIPTS
+  ───────────────────────────────────────── */
+  async function uploadReceipt(expId, input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { toast('⚠️ הקובץ גדול מ-20MB'); return; }
+    const fd = new FormData();
+    fd.append('receipt', file);
+    toast('⏳ מעלה קבלה...');
+    try {
+      const res = await fetch(`${API}/expenses/${expId}/receipt`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error();
+      await loadData();
+      toast('✅ הקבלה צורפה בהצלחה! 🧾');
+    } catch { toast('❌ שגיאה בהעלאת הקבלה'); }
+  }
+
+  async function deleteReceipt(expId) {
+    if (!confirm('למחוק את הקבלה המצורפת?')) return;
+    try {
+      await apiFetch('DELETE', `/expenses/${expId}/receipt`);
+      await loadData();
+      toast('🗑️ הקבלה נמחקה');
+    } catch { toast('❌ שגיאה במחיקה'); }
+  }
+
+  function viewReceipt(expId, filename) {
+    const SUPABASE_URL = 'https://twprvzxdmfxjhinwarpo.supabase.co';
+    const url    = filename.startsWith('http') ? filename : `${SUPABASE_URL}/storage/v1/object/public/receipts/${filename}`;
+    const ext    = filename.split('.').pop().toLowerCase();
+    const modal  = document.getElementById('modal-receipt');
+    const viewer = document.getElementById('receipt-viewer');
+    const iframe = document.getElementById('receipt-iframe');
+    const title  = document.getElementById('receipt-title');
+    const exp = expenses.find(e => e.id === expId);
+    title.textContent = `🧾 קבלה — ${exp ? exp.name : ''}`;
+    if (ext === 'pdf') {
+      viewer.style.display = 'none';
+      iframe.style.display = 'block';
+      iframe.src = url;
+    } else {
+      iframe.style.display = 'none';
+      viewer.style.display = 'block';
+      viewer.src = url;
+    }
+    modal.classList.add('open');
+  }
+
+  /* ─────────────────────────────────────────
+     MODALS
+  ───────────────────────────────────────── */
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  /* ─────────────────────────────────────────
+     ENTER KEY
+  ───────────────────────────────────────── */
+  document.getElementById('exp-note').addEventListener('keydown', e => { if(e.key==='Enter') addExpense(); });
+  document.getElementById('gift-note').addEventListener('keydown', e => { if(e.key==='Enter') addGift(); });
+
+  /* ─────────────────────────────────────────
+     INIT
+  ───────────────────────────────────────── */
+  loadData();
+</script>
+</body>
+</html>
