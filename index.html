@@ -365,12 +365,12 @@
     <!-- Export bar -->
     <div class="export-bar">
       <span>📤 ייצוא נתונים:</span>
-      <a class="btn-export btn-export-green" href="http://localhost:3001/api/export/expenses.csv" download>
+      <button class="btn-export btn-export-green" onclick="downloadCSV('expenses')">
         📊 Excel הוצאות
-      </a>
-      <a class="btn-export btn-export-blue" href="http://localhost:3001/api/export/guests.csv" download>
+      </button>
+      <button class="btn-export btn-export-blue" onclick="downloadCSV('guests')">
         🎁 Excel אורחים
-      </a>
+      </button>
       <button class="btn-export btn-export-gray" onclick="window.print()">
         🖨️ הדפסת סיכום
       </button>
@@ -770,6 +770,26 @@
     renderExpenses();
     renderGifts();
     renderDashboard();
+  }
+
+  /* ─────────────────────────────────────────
+     CSV EXPORT
+  ───────────────────────────────────────── */
+  function downloadCSV(type) {
+    const urls = {
+      expenses: `${window.location.origin}/api/export/expenses.csv`,
+      guests:   `${window.location.origin}/api/export/guests.csv`
+    };
+    const filenames = {
+      expenses: 'wedding-expenses.csv',
+      guests:   'wedding-guests.csv'
+    };
+    const a = document.createElement('a');
+    a.href = urls[type];
+    a.download = filenames[type];
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   /* ─────────────────────────────────────────
