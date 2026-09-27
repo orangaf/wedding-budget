@@ -512,10 +512,38 @@ async function _saveGift(msg, giftData, silent=false) {
 app.listen(PORT, async () => {
   console.log(`✅ שרת פועל על פורט ${PORT}`);
   if (IS_PRODUCTION && WEBHOOK_URL) {
-    // Set Telegram webhook
     const webhookEndpoint = `${WEBHOOK_URL}/webhook`;
     await bot.setWebHook(webhookEndpoint);
     console.log(`🔗 Webhook set: ${webhookEndpoint}`);
+
+    /* ── Keep-alive: Supabase ping כל 5 ימים ──
+       Supabase Free Tier נרדם אחרי 7 ימים.
+       אנחנו מעירים אותו כל 5 ימים עם SELECT 1.  */
+    const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        const { error } = await supabase.from('expenses').select('id').limit(1);
+        if (error) console.warn('⚠️ Supabase keep-alive failed:', error.message);
+        else console.log('💓 Supabase keep-alive ping — OK');
+      } catch (e) {
+        console.warn('⚠️ Supabase keep-alive error:', e.message);
+      }
+    }, FIVE_DAYS);
+
+    /* ── Keep-alive: Render self-ping כל 10 דקות ──
+       Render Free Tier "נרדם" אחרי 15 דקות ללא בקשות.
+       אנחנו שולחים בקשת /health לעצמנו כדי להישאר ערים. */
+    const TEN_MIN = 10 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        const res = await fetch(`${WEBHOOK_URL}/health`);
+        console.log(`💓 Render self-ping — ${res.status === 200 ? 'OK' : 'FAIL'}`);
+      } catch (e) {
+        console.warn('⚠️ Render self-ping error:', e.message);
+      }
+    }, TEN_MIN);
+
+    console.log('⏰ Keep-alive פעיל: Supabase כל 5 ימים | Render כל 10 דקות');
   } else {
     console.log('🤖 בוט מאזין (polling mode - local development)');
   }
